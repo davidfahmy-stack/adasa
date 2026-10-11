@@ -1,56 +1,100 @@
 import { Link } from 'react-router-dom';
-import { Camera, Home, BookOpen, AlertCircle, ArrowLeft } from 'lucide-react';
 
 export default function NotFoundPage() {
   return (
-    <div className="min-h-[70vh] flex items-center justify-center px-4 sm:px-6 lg:px-8 py-16">
-      <div className="max-w-xl w-full text-center space-y-8 bg-white p-8 sm:p-12 rounded-3xl border border-gray-200/90 shadow-xl relative overflow-hidden">
-        {/* Glow */}
-        <div className="absolute top-0 right-1/2 translate-x-1/2 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        {/* 404 Illustration Badge */}
-        <div className="relative inline-flex items-center justify-center">
-          <span className="text-8xl sm:text-9xl font-black text-amber-500/20 select-none">
+    <div className="min-h-[calc(100vh-5rem)] flex items-center justify-center relative overflow-hidden bg-[#0a0a0a]">
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(38,38,38,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(38,38,38,0.5)_1px,transparent_1px)] bg-[size:60px_60px]" />
+      <div className="absolute inset-0 opacity-40">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-orange-500/20 rounded-full blur-[100px] animate-[float_6s_ease-in-out_infinite]" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-yellow-500/10 rounded-full blur-[100px] animate-[float_8s_ease-in-out_infinite_1s]" />
+      </div>
+      <div className="relative text-center px-4 max-w-lg mx-auto">
+        <div className="relative mb-6">
+          <h1 className="text-[140px] md:text-[180px] font-black text-transparent bg-clip-text bg-gradient-to-r from-orange-500 via-yellow-500 to-orange-500 leading-none select-none">
             404
-          </span>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl bg-gradient-to-tr from-amber-500 to-orange-500 text-white flex items-center justify-center shadow-lg shadow-amber-500/30 animate-bounce">
-              <Camera className="w-10 h-10 sm:w-12 sm:h-12" />
-            </div>
-          </div>
-        </div>
-
-        {/* Text */}
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-50 text-red-700 text-xs font-bold">
-            <AlertCircle className="w-3.5 h-3.5" />
-            <span>خطأ 404: الصفحة غير موجودة</span>
-          </div>
-          <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
-            عفواً، الصورة غير واضحة!
           </h1>
-          <p className="text-gray-600 text-sm sm:text-base leading-relaxed max-w-md mx-auto">
-            يبدو أن الزاوية التي التقطتها غير صحيحة، أو أن الرابط الذي تحاول الوصول إليه لم يعد موجوداً أو تم نقله لمسار آخر.
-          </p>
+          <div className="absolute inset-0 text-[140px] md:text-[180px] font-black text-orange-500/20 blur-2xl leading-none select-none pointer-events-none">
+            404
+          </div>
         </div>
 
-        {/* Actions */}
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
-          <Link
-            to="/"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md shadow-amber-500/25 hover:shadow-lg transition-all"
-          >
-            <Home className="w-4 h-4" />
-            <span>العودة للرئيسية</span>
+        <div className="relative w-28 h-28 mx-auto mb-8">
+          <div className="absolute inset-0 bg-gradient-to-br from-orange-500/20 to-yellow-500/20 rounded-full border border-orange-500/30" />
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg
+              className="w-14 h-14 text-orange-500"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={1.5}
+                d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            </svg>
+          </div>
+          <div className="absolute -top-2 -right-2 w-5 h-5 bg-orange-500 rounded-lg rotate-12 animate-bounce" />
+          <div className="absolute -bottom-1 -left-3 w-4 h-4 bg-yellow-500 rounded-full animate-pulse" />
+        </div>
+
+        <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">
+          عفواً! الصفحة غير موجودة
+        </h2>
+        <p className="text-neutral-400 mb-8 text-lg">
+          الصفحة التي تبحث عنها غير موجودة أو تم نقلها. دعنا نعيدك إلى المسار الصحيح.
+        </p>
+
+        <div className="flex flex-col sm:flex-row justify-center gap-4 mb-12">
+          <Link to="/" className="btn-primary inline-flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
+              />
+            </svg>
+            الذهاب للرئيسية
           </Link>
-          <Link
-            to="/blog"
-            className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold text-sm transition-all"
-          >
-            <BookOpen className="w-4 h-4 text-amber-500" />
-            <span>تصفح المدونة</span>
-            <ArrowLeft className="w-4 h-4" />
+          <Link to="/blog" className="btn-secondary inline-flex items-center justify-center gap-2">
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+              />
+            </svg>
+            تصفح المقالات
           </Link>
+        </div>
+
+        <div className="pt-8 border-t border-[#262626]">
+          <p className="text-sm text-neutral-500 mb-4">قد تجد هذه مفيدة:</p>
+          <div className="flex flex-wrap justify-center gap-4 text-sm">
+            <Link
+              to="/blog"
+              className="text-orange-500 hover:text-orange-400 hover:underline font-medium"
+            >
+              المدونة
+            </Link>
+            <span className="text-neutral-600">•</span>
+            <Link
+              to="/about"
+              className="text-orange-500 hover:text-orange-400 hover:underline font-medium"
+            >
+              من نحن
+            </Link>
+            <span className="text-neutral-600">•</span>
+            <Link
+              to="/privacy"
+              className="text-orange-500 hover:text-orange-400 hover:underline font-medium"
+            >
+              الخصوصية
+            </Link>
+          </div>
         </div>
       </div>
     </div>

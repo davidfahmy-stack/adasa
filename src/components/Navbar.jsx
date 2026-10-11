@@ -1,177 +1,139 @@
-import { useState } from 'react';
-import { Link, NavLink, useNavigate } from 'react-router-dom';
-import { Camera, Aperture, Search, Menu, X, BookOpen, Home, Info, Sparkles } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Link, NavLink } from 'react-router-dom';
+import postsData from '../data/posts.json';
+
+const logo = '/assets/logo-GdqARQRt.png';
 
 export default function Navbar() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [quickSearch, setQuickSearch] = useState('');
-  const [searchOpen, setSearchOpen] = useState(false);
-  const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
+  const { siteInfo } = postsData;
 
-  const handleSearchSubmit = (e) => {
-    e.preventDefault();
-    if (quickSearch.trim()) {
-      navigate(`/blog?search=${encodeURIComponent(quickSearch.trim())}`);
-      setQuickSearch('');
-      setSearchOpen(false);
-      setMobileMenuOpen(false);
-    }
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const navLinks = [
+    { name: 'الرئيسية', path: '/' },
+    { name: 'المدونة', path: '/blog' },
+    { name: 'من نحن', path: '/about' }
+  ];
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
   };
 
-  const navLinkClass = ({ isActive }) =>
-    `px-4 py-2 rounded-xl text-base font-medium transition-all duration-200 flex items-center gap-2 ${
-      isActive
-        ? 'bg-amber-50 text-amber-700 shadow-sm font-bold border border-amber-200/60'
-        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100/80'
-    }`;
-
-  const mobileNavLinkClass = ({ isActive }) =>
-    `px-4 py-3 rounded-xl text-base font-medium transition-all flex items-center gap-3 ${
-      isActive
-        ? 'bg-amber-500 text-white font-bold shadow-md'
-        : 'text-gray-700 hover:bg-gray-100'
-    }`;
-
   return (
-    <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200/80 transition-shadow duration-200 shadow-xs">
+    <nav
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 bg-[#0a0a0a]/95 backdrop-blur-xl ${
+        isScrolled ? 'border-b border-[#262626]' : 'border-b border-transparent'
+      }`}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-20">
+        <div className="flex justify-between items-center h-20">
           {/* Logo */}
-          <Link
-            to="/"
-            className="flex items-center gap-3 group focus:outline-hidden"
-          >
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-orange-500 to-amber-400 flex items-center justify-center text-white shadow-md shadow-amber-500/20 group-hover:scale-105 group-hover:rotate-6 transition-all duration-300">
-              <Aperture className="w-7 h-7 animate-spin-slow" />
+          <Link to="/" className="flex items-center gap-3 group">
+            <div className="relative w-12 h-12 rounded-xl overflow-hidden group-hover:scale-105 transition-all duration-300">
+              <img src={logo} alt="Photography Logo" className="w-full h-full object-cover" />
             </div>
             <div className="flex flex-col">
-              <div className="flex items-center gap-1.5">
-                <span className="text-2xl font-black tracking-tight text-gray-900 group-hover:text-amber-600 transition-colors">
-                  عدسة
-                </span>
-                <span className="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
-              </div>
-              <span className="text-xs text-gray-500 font-medium">عالم التصوير الفوتوغرافي</span>
+              <span className="text-xl font-bold bg-linear-to-r from-white to-neutral-300 bg-clip-text text-transparent">
+                {siteInfo.name}
+              </span>
+              <span className="text-xs text-orange-400/80 hidden sm:block tracking-wide">
+                عالم التصوير الفوتوغرافي
+              </span>
             </div>
           </Link>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-2">
-            <NavLink to="/" end className={navLinkClass}>
-              <Home className="w-4 h-4" />
-              <span>الرئيسية</span>
-            </NavLink>
-            <NavLink to="/blog" className={navLinkClass}>
-              <BookOpen className="w-4 h-4" />
-              <span>المدونة</span>
-            </NavLink>
-            <NavLink to="/about" className={navLinkClass}>
-              <Info className="w-4 h-4" />
-              <span>من نحن</span>
-            </NavLink>
-          </nav>
-
-          {/* Right Header Actions */}
-          <div className="hidden md:flex items-center gap-3">
-            {/* Quick Search Toggle / Form */}
-            {searchOpen ? (
-              <form onSubmit={handleSearchSubmit} className="relative flex items-center animate-fade-in">
-                <input
-                  type="text"
-                  placeholder="ابحث عن مقال أو فكرة..."
-                  value={quickSearch}
-                  onChange={(e) => setQuickSearch(e.target.value)}
-                  autoFocus
-                  className="w-64 pl-9 pr-4 py-2 text-sm bg-gray-50 border border-amber-300 rounded-full focus:outline-hidden focus:ring-2 focus:ring-amber-400 focus:bg-white transition-all shadow-inner"
-                />
-                <button
-                  type="button"
-                  onClick={() => setSearchOpen(false)}
-                  className="absolute left-2 text-gray-400 hover:text-gray-600 p-1"
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center">
+            <div className="flex items-center bg-[#161616] rounded-full p-1.5 border border-[#262626]">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  className={({ isActive }) =>
+                    `px-5 py-2.5 rounded-full text-sm font-medium transition-all duration-300 ${
+                      isActive
+                        ? 'bg-linear-to-r from-orange-500 to-orange-600 text-white'
+                        : 'text-neutral-400 hover:text-white'
+                    }`
+                  }
                 >
-                  <X className="w-4 h-4" />
-                </button>
-              </form>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setSearchOpen(true)}
-                className="p-2.5 text-gray-600 hover:text-amber-600 hover:bg-amber-50 rounded-xl transition-colors flex items-center gap-2 text-sm border border-transparent hover:border-amber-200"
-                title="بحث سريع"
-              >
-                <Search className="w-5 h-5" />
-                <span className="text-xs font-medium text-gray-400">بحث</span>
-              </button>
-            )}
+                  {link.name}
+                </NavLink>
+              ))}
+            </div>
+          </div>
 
+          {/* Right Actions */}
+          <div className="hidden md:flex items-center gap-3">
             <Link
               to="/blog"
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white font-bold text-sm shadow-md shadow-amber-500/25 hover:shadow-lg hover:shadow-amber-500/35 hover:-translate-y-0.5 transition-all duration-200"
+              className="p-3 text-neutral-500 hover:text-orange-500 hover:bg-[#161616] rounded-xl transition-all duration-300 border border-transparent hover:border-[#262626]"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>استكشف المقالات</span>
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </Link>
+            <Link to="/blog" className="btn-primary text-sm">
+              ابدأ القراءة
             </Link>
           </div>
 
-          {/* Mobile Menu Button */}
-          <div className="flex md:hidden items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2.5 rounded-xl text-gray-700 hover:bg-gray-100 focus:outline-hidden border border-gray-200"
-              aria-label="القائمة الرئيسية"
-            >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+          {/* Mobile menu button */}
+          <button
+            onClick={toggleMenu}
+            className="md:hidden p-3 text-neutral-400 hover:text-white hover:bg-[#161616] rounded-xl transition-all duration-300 border border-transparent hover:border-[#262626]"
+          >
+            {isMenuOpen ? (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
+
+        {/* Mobile menu dropdown */}
+        <div className={`md:hidden overflow-hidden transition-all duration-300 ${isMenuOpen ? 'max-h-80 pb-6' : 'max-h-0'}`}>
+          <div className="bg-[#161616] backdrop-blur-xl rounded-2xl p-4 border border-[#262626]">
+            <div className="flex flex-col space-y-1">
+              {navLinks.map((link) => (
+                <NavLink
+                  key={link.path}
+                  to={link.path}
+                  onClick={() => setIsMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `px-4 py-3 rounded-xl text-sm font-medium transition-all duration-300 ${
+                      isActive
+                        ? 'bg-orange-500/10 text-orange-500 border border-orange-500/30'
+                        : 'text-neutral-400 hover:bg-[#1a1a1a] hover:text-white'
+                    }`
+                  }
+                >
+                  {link.name}
+                </NavLink>
+              ))}
+              <Link
+                to="/blog"
+                onClick={() => setIsMenuOpen(false)}
+                className="btn-primary text-sm text-center mt-2"
+              >
+                ابدأ القراءة
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-
-      {/* Mobile Drawer */}
-      {mobileMenuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white px-4 pt-4 pb-6 space-y-4 shadow-xl animate-fade-in">
-          {/* Mobile Search Input */}
-          <form onSubmit={handleSearchSubmit} className="relative">
-            <input
-              type="text"
-              placeholder="ابحث في المقالات..."
-              value={quickSearch}
-              onChange={(e) => setQuickSearch(e.target.value)}
-              className="w-full pr-10 pl-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-amber-500 focus:bg-white"
-            />
-            <Search className="w-5 h-5 text-gray-400 absolute right-3 top-3" />
-          </form>
-
-          {/* Mobile Navigation Links */}
-          <nav className="flex flex-col gap-2">
-            <NavLink
-              to="/"
-              end
-              className={mobileNavLinkClass}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Home className="w-5 h-5" />
-              <span>الرئيسية</span>
-            </NavLink>
-            <NavLink
-              to="/blog"
-              className={mobileNavLinkClass}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <BookOpen className="w-5 h-5" />
-              <span>المدونة</span>
-            </NavLink>
-            <NavLink
-              to="/about"
-              className={mobileNavLinkClass}
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              <Info className="w-5 h-5" />
-              <span>من نحن</span>
-            </NavLink>
-          </nav>
-        </div>
-      )}
-    </header>
+    </nav>
   );
 }

@@ -1,381 +1,326 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import {
-  Search,
-  X,
-  LayoutGrid,
-  List,
-  Filter,
-  SlidersHorizontal,
-  RotateCcw,
-  Camera,
-  Sparkles,
-  BookOpen
-} from 'lucide-react';
-import PostCard from '../components/PostCard';
-import Pagination from '../components/Pagination';
+import { PostCard, PostListCard } from '../components/PostCard';
 import postsData from '../data/posts.json';
 
 const POSTS_PER_PAGE = 6;
 
 export default function BlogPage() {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const blogTopRef = useRef(null);
-
-  // Initialize filters from URL query parameters
-  const initialCategory = searchParams.get('category') || 'الكل';
-  const initialSearch = searchParams.get('search') || '';
-  const initialPage = parseInt(searchParams.get('page') || '1', 10);
-
-  const [selectedCategory, setSelectedCategory] = useState(initialCategory);
-  const [searchQuery, setSearchQuery] = useState(initialSearch);
-  const [currentPage, setCurrentPage] = useState(isNaN(initialPage) ? 1 : initialPage);
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
-  const [sortBy, setSortBy] = useState('latest'); // 'latest', 'oldest', 'readTime'
-
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get('category');
   const { posts, categories } = postsData;
 
-  // Sync state if URL search params change (e.g., via Navbar search or Category links)
+  const [selectedCategory, setSelectedCategory] = useState(categoryParam || 'all');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [viewMode, setViewMode] = useState('grid');
+  const resultsRef = useRef(null);
+
   useEffect(() => {
-    const cat = searchParams.get('category') || 'الكل';
-    const query = searchParams.get('search') || '';
-    const page = parseInt(searchParams.get('page') || '1', 10);
-
-    setSelectedCategory(cat);
-    setSearchQuery(query);
-    setCurrentPage(isNaN(page) ? 1 : page);
-  }, [searchParams]);
-
-  // Update URL search parameters when state changes
-  const updateUrlParams = (newCategory, newSearch, newPage) => {
-    const params = {};
-    if (newCategory && newCategory !== 'الكل') params.category = newCategory;
-    if (newSearch && newSearch.trim()) params.search = newSearch.trim();
-    if (newPage && newPage > 1) params.page = newPage.toString();
-    setSearchParams(params, { replace: true });
-  };
-
-  // Filter and sort posts
-  const filteredAndSortedPosts = useMemo(() => {
-    let result = posts;
-
-    // 1. Category Filter (Real state filtration, NOT navs & tabs)
-    if (selectedCategory && selectedCategory !== 'الكل') {
-      result = result.filter((post) => post.category === selectedCategory);
+    if (categoryParam) {
+      setSelectedCategory(categoryParam);
     }
+  }, [categoryParam]);
 
-    // 2. Search Query Filter
-    if (searchQuery.trim()) {
-      const q = searchQuery.trim().toLowerCase();
-      result = result.filter((post) => {
-        const titleMatch = post.title.toLowerCase().includes(q);
-        const excerptMatch = post.excerpt.toLowerCase().includes(q);
-        const contentMatch = post.content.toLowerCase().includes(q);
-        const authorMatch = post.author.name.toLowerCase().includes(q);
-        const tagMatch = post.tags && post.tags.some((t) => t.toLowerCase().includes(q));
-        return titleMatch || excerptMatch || contentMatch || authorMatch || tagMatch;
-      });
-    }
-
-    // 3. Sorting
-    const sorted = [...result];
-    if (sortBy === 'latest') {
-      sorted.sort((a, b) => new Date(b.date) - new Date(a.date));
-    } else if (sortBy === 'oldest') {
-      sorted.sort((a, b) => new Date(a.date) - new Date(b.date));
-    } else if (sortBy === 'readTime') {
-      sorted.sort((a, b) => {
-        const timeA = parseInt(a.readTime, 10) || 0;
-        const timeB = parseInt(b.readTime, 10) || 0;
-        return timeB - timeA;
-      });
-    }
-
-    return sorted;
-  }, [posts, selectedCategory, searchQuery, sortBy]);
-
-  // Pagination calculation
-  const totalPosts = filteredAndSortedPosts.length;
-  const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE);
-
-  // Paginated chunk
-  const paginatedPosts = useMemo(() => {
-    const startIndex = (currentPage - 1) * POSTS_PER_PAGE;
-    return filteredAndSortedPosts.slice(startIndex, startIndex + POSTS_PER_PAGE);
-  }, [filteredAndSortedPosts, currentPage]);
-
-  // Handlers
-  const handleCategoryChange = (category) => {
-    setSelectedCategory(category);
-    setCurrentPage(1);
-    updateUrlParams(category, searchQuery, 1);
-  };
-
-  const handleSearchChange = (e) => {
-    const val = e.target.value;
-    setSearchQuery(val);
-    setCurrentPage(1);
-    updateUrlParams(selectedCategory, val, 1);
-  };
-
-  const handleClearSearch = () => {
-    setSearchQuery('');
-    setCurrentPage(1);
-    updateUrlParams(selectedCategory, '', 1);
-  };
-
-  const handleResetFilters = () => {
-    setSelectedCategory('الكل');
-    setSearchQuery('');
-    setCurrentPage(1);
-    setSortBy('latest');
-    setSearchParams({}, { replace: true });
-  };
-
-  const handlePageChange = (newPage) => {
-    setCurrentPage(newPage);
-    updateUrlParams(selectedCategory, searchQuery, newPage);
-    if (blogTopRef.current) {
-      blogTopRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const scrollToResults = () => {
+    if (resultsRef.current) {
+      resultsRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
 
-  // Category counts
-  const categoryCounts = useMemo(() => {
-    const counts = { 'الكل': posts.length };
-    categories.forEach((cat) => {
-      counts[cat.name] = posts.filter((p) => p.category === cat.name).length;
-    });
-    return counts;
-  }, [posts, categories]);
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    scrollToResults();
+  };
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedCategory, searchQuery]);
+
+  const filteredPosts = posts.filter((post) => {
+    const matchesCategory =
+      selectedCategory === 'all' ||
+      post.category.toLowerCase() === selectedCategory.toLowerCase();
+    const matchesSearch =
+      post.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      post.excerpt.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesCategory && matchesSearch;
+  });
+
+  const totalPages = Math.ceil(filteredPosts.length / POSTS_PER_PAGE);
+  const currentPosts = filteredPosts.slice(
+    (currentPage - 1) * POSTS_PER_PAGE,
+    currentPage * POSTS_PER_PAGE
+  );
+
+  const getPageNumbers = () => {
+    const pages = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) pages.push(i);
+    } else if (currentPage <= 3) {
+      pages.push(1, 2, 3, 4, '...', totalPages);
+    } else if (currentPage >= totalPages - 2) {
+      pages.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+    } else {
+      pages.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+    }
+    return pages;
+  };
 
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-10" ref={blogTopRef}>
-      {/* 1. Header Banner */}
-      <div className="text-center max-w-2xl mx-auto space-y-3">
-        <div className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold">
-          <BookOpen className="w-3.5 h-3.5 text-amber-600" />
-          <span>مكتبة التدوينات الشاملة</span>
+    <div className="min-h-screen bg-[#0a0a0a]">
+      {/* Hero Header */}
+      <div className="relative py-20 overflow-hidden">
+        <div className="absolute inset-0 bg-[#0a0a0a]" />
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(38,38,38,0.5)_1px,transparent_1px),linear-gradient(90deg,rgba(38,38,38,0.5)_1px,transparent_1px)] bg-[size:60px_60px]" />
+        <div className="absolute inset-0">
+          <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl" />
         </div>
-        <h1 className="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">
-          مدونة عدسة الفوتوغرافية
-        </h1>
-        <p className="text-gray-600 text-sm sm:text-base leading-relaxed">
-          تصفح {posts.length} مقالاً تعليمياً وتطبيقياً يغطي جميع جوانب فن وتكنيك التصوير الفوتوغرافي.
-        </p>
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <span className="section-label inline-flex items-center gap-2 mb-6">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"
+              />
+            </svg>
+            مدونتنا
+          </span>
+          <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6">
+            استكشف <span className="gradient-text">مقالاتنا</span>
+          </h1>
+          <p className="text-xl text-neutral-400 max-w-2xl mx-auto">
+            اكتشف الدروس والرؤى وأفضل الممارسات للتطوير الحديث
+          </p>
+        </div>
       </div>
 
-      {/* 2. Search & Filter Control Center */}
-      <div className="bg-white rounded-3xl p-6 sm:p-8 border border-gray-200 shadow-sm space-y-6">
-        {/* Search Bar */}
-        <div className="relative">
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            placeholder="ابحث بالعنوان، الكاتب، الوسم، أو موضوع التدوينة..."
-            className="w-full pl-12 pr-12 py-4 rounded-2xl bg-gray-50 border border-gray-200 focus:border-amber-500 focus:bg-white focus:outline-hidden focus:ring-4 focus:ring-amber-500/10 text-base text-gray-900 transition-all placeholder:text-gray-400 font-medium shadow-inner"
-          />
-          <Search className="w-6 h-6 text-gray-400 absolute right-4 top-4" />
-          {searchQuery && (
-            <button
-              type="button"
-              onClick={handleClearSearch}
-              className="absolute left-4 top-4 text-gray-400 hover:text-gray-700 p-1 hover:bg-gray-200 rounded-full transition-colors"
-              title="مسح البحث"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Category Filter Pills (Pure State-Based Filtering, not Navs/Tabs) */}
-        <div>
-          <div className="flex items-center justify-between mb-3 text-xs font-bold text-gray-500">
-            <span className="flex items-center gap-1.5">
-              <Filter className="w-3.5 h-3.5 text-amber-500" />
-              <span>التصنيفات:</span>
-            </span>
-            {(selectedCategory !== 'الكل' || searchQuery) && (
-              <button
-                type="button"
-                onClick={handleResetFilters}
-                className="text-amber-600 hover:text-amber-700 flex items-center gap-1 cursor-pointer"
+      {/* Sticky Filter Bar */}
+      <div className="sticky top-20 z-40 bg-[#0a0a0a]/90 backdrop-blur-xl border-b border-[#262626]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <div className="relative w-full md:w-80">
+              <input
+                type="text"
+                placeholder="ابحث في المقالات..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="input-dark w-full px-5 py-3 pr-12"
+              />
+              <svg
+                className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-500"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
               >
-                <RotateCcw className="w-3 h-3" />
-                <span>إعادة ضبط الفلاتر</span>
-              </button>
-            )}
-          </div>
-
-          <div className="flex flex-wrap gap-2.5">
-            <button
-              type="button"
-              onClick={() => handleCategoryChange('الكل')}
-              className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                selectedCategory === 'الكل'
-                  ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 scale-102'
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-              }`}
-            >
-              <span>الكل</span>
-              <span
-                className={`text-xs px-2 py-0.5 rounded-full font-mono ${
-                  selectedCategory === 'الكل'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-white text-gray-600'
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+            <div className="flex flex-wrap justify-center gap-2">
+              <button
+                onClick={() => setSelectedCategory('all')}
+                className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                  selectedCategory === 'all'
+                    ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                    : 'bg-[#161616] text-neutral-400 border border-[#262626] hover:border-orange-500/30'
                 }`}
               >
-                {categoryCounts['الكل']}
-              </span>
-            </button>
-
-            {categories.map((cat) => {
-              const isSelected = selectedCategory === cat.name;
-              const count = categoryCounts[cat.name] || 0;
-
-              return (
+                جميع المقالات
+              </button>
+              {categories.map((cat) => (
                 <button
                   key={cat.name}
-                  type="button"
-                  onClick={() => handleCategoryChange(cat.name)}
-                  className={`px-4 py-2 rounded-xl text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    isSelected
-                      ? 'bg-amber-500 text-white shadow-md shadow-amber-500/20 scale-102'
-                      : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                  onClick={() => setSelectedCategory(cat.name.toLowerCase())}
+                  className={`px-4 py-2 rounded-xl text-sm font-medium transition-all duration-300 ${
+                    selectedCategory === cat.name.toLowerCase()
+                      ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                      : 'bg-[#161616] text-neutral-400 border border-[#262626] hover:border-orange-500/30'
                   }`}
                 >
-                  <span>{cat.name}</span>
-                  <span
-                    className={`text-xs px-2 py-0.5 rounded-full font-mono ${
-                      isSelected
-                        ? 'bg-white/20 text-white'
-                        : 'bg-white text-gray-600'
-                    }`}
-                  >
-                    {count}
-                  </span>
+                  {cat.name}
                 </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Controls Bar: Results Count, Sort, and View Mode Toggle */}
-        <div className="pt-4 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4">
-          {/* Results count */}
-          <div className="text-sm font-medium text-gray-600 self-start sm:self-auto">
-            <span>تم العثور على </span>
-            <span className="font-bold text-gray-900">{totalPosts}</span>
-            <span> تدوينة</span>
-            {selectedCategory !== 'الكل' && (
-              <span className="text-amber-700 font-bold"> في تصنيف "{selectedCategory}"</span>
-            )}
-            {searchQuery && (
-              <span className="text-amber-700 font-bold"> مطابقة لـ "{searchQuery}"</span>
-            )}
-          </div>
-
-          {/* Right side controls: Sorting + Grid/List View Toggle */}
-          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
-            {/* Sort Select */}
-            <div className="flex items-center gap-2 text-xs">
-              <span className="text-gray-500 hidden sm:inline">ترتيب:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-2 text-xs font-bold text-gray-700 focus:outline-hidden focus:border-amber-400"
-              >
-                <option value="latest">الأحدث تاريخاً</option>
-                <option value="oldest">الأقدم تاريخاً</option>
-                <option value="readTime">الأطول قراءة</option>
-              </select>
-            </div>
-
-            {/* View Mode Toggle: Grid vs List (Crucial Assignment Requirement) */}
-            <div className="flex items-center bg-gray-100 p-1 rounded-xl border border-gray-200">
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
-                  viewMode === 'grid'
-                    ? 'bg-white text-amber-600 shadow-xs'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-                title="عرض شبكي (Grid)"
-                aria-label="عرض شبكي"
-              >
-                <LayoutGrid className="w-4 h-4" />
-                <span className="hidden md:inline">شبكة</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setViewMode('list')}
-                className={`p-2 rounded-lg transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer ${
-                  viewMode === 'list'
-                    ? 'bg-white text-amber-600 shadow-xs'
-                    : 'text-gray-500 hover:text-gray-800'
-                }`}
-                title="عرض قائمة (List)"
-                aria-label="عرض قائمة"
-              >
-                <List className="w-4 h-4" />
-                <span className="hidden md:inline">قائمة</span>
-              </button>
+              ))}
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Posts Display Section */}
-      {paginatedPosts.length > 0 ? (
-        <div className="space-y-10">
-          {viewMode === 'grid' ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {paginatedPosts.map((post) => (
-                <PostCard key={post.id} post={post} viewMode="grid" />
-              ))}
+      {/* Results Container */}
+      <div ref={resultsRef} className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 scroll-mt-[146px]">
+        <div className="mb-8 flex items-center justify-between">
+          <p className="text-neutral-400">
+            عرض <span className="font-bold text-white">{filteredPosts.length}</span>{' '}
+            {filteredPosts.length === 1 ? 'مقالة' : 'مقالات'}
+            {selectedCategory !== 'all' && (
+              <span>
+                {' '}
+                في <span className="font-bold text-orange-500 capitalize">{selectedCategory}</span>
+              </span>
+            )}
+          </p>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center bg-[#161616] border border-[#262626] rounded-xl p-1">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`p-2 rounded-lg transition-all duration-300 ${
+                  viewMode === 'grid' ? 'bg-orange-500 text-white' : 'text-neutral-400 hover:text-white'
+                }`}
+                title="عرض شبكي"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                  />
+                </svg>
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`p-2 rounded-lg transition-all duration-300 ${
+                  viewMode === 'list' ? 'bg-orange-500 text-white' : 'text-neutral-400 hover:text-white'
+                }`}
+                title="عرض قائمة"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                </svg>
+              </button>
             </div>
-          ) : (
-            <div className="space-y-6">
-              {paginatedPosts.map((post) => (
-                <PostCard key={post.id} post={post} viewMode="list" />
-              ))}
-            </div>
-          )}
+            {(searchQuery || selectedCategory !== 'all') && (
+              <button
+                onClick={() => {
+                  setSearchQuery('');
+                  setSelectedCategory('all');
+                }}
+                className="text-sm text-neutral-500 hover:text-orange-500 flex items-center gap-1 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                مسح الفلاتر
+              </button>
+            )}
+          </div>
+        </div>
 
-          {/* 4. Pagination Controls (Bonus 🎁) */}
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-          />
-        </div>
-      ) : (
-        /* Empty State */
-        <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-300 p-8 space-y-5">
-          <div className="w-20 h-20 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center mx-auto shadow-inner">
-            <Camera className="w-10 h-10" />
+        {currentPosts.length > 0 ? (
+          <>
+            {viewMode === 'grid' ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {currentPosts.map((post, idx) => (
+                  <PostCard key={post.id} post={post} index={idx} />
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col gap-6">
+                {currentPosts.map((post, idx) => (
+                  <PostListCard key={post.id} post={post} index={idx} />
+                ))}
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-12">
+                <button
+                  onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`p-3 rounded-xl border transition-all duration-300 ${
+                    currentPage === 1
+                      ? 'bg-[#0a0a0a] border-[#262626] text-neutral-600 cursor-not-allowed'
+                      : 'bg-[#161616] border-[#262626] text-white hover:border-orange-500/50 hover:bg-[#1a1a1a]'
+                  }`}
+                >
+                  <svg className="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <div className="flex items-center gap-1">
+                  {getPageNumbers().map((num, idx) =>
+                    num === '...' ? (
+                      <span key={`ellipsis-${idx}`} className="px-3 py-2 text-neutral-500">
+                        ...
+                      </span>
+                    ) : (
+                      <button
+                        key={num}
+                        onClick={() => handlePageChange(num)}
+                        className={`min-w-[44px] h-11 rounded-xl text-sm font-medium transition-all duration-300 ${
+                          currentPage === num
+                            ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white'
+                            : 'bg-[#161616] text-neutral-400 border border-[#262626] hover:border-orange-500/50 hover:text-white'
+                        }`}
+                      >
+                        {num}
+                      </button>
+                    )
+                  )}
+                </div>
+                <button
+                  onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`p-3 rounded-xl border transition-all duration-300 ${
+                    currentPage === totalPages
+                      ? 'bg-[#0a0a0a] border-[#262626] text-neutral-600 cursor-not-allowed'
+                      : 'bg-[#161616] border-[#262626] text-white hover:border-orange-500/50 hover:bg-[#1a1a1a]'
+                  }`}
+                >
+                  <svg className="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <p className="text-center text-neutral-500 mt-4 text-sm">
+                صفحة {currentPage} من {totalPages}
+              </p>
+            )}
+          </>
+        ) : (
+          <div className="text-center py-20">
+            <div className="w-24 h-24 bg-[#161616] border border-[#262626] rounded-full flex items-center justify-center mx-auto mb-6">
+              <svg className="w-12 h-12 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            </div>
+            <h3 className="text-2xl font-bold text-white mb-3">لا توجد مقالات</h3>
+            <p className="text-neutral-400 mb-6">حاول تعديل البحث أو الفلتر للعثور على ما تبحث عنه.</p>
+            <button
+              onClick={() => {
+                setSearchQuery('');
+                setSelectedCategory('all');
+              }}
+              className="btn-primary inline-flex items-center gap-2"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+              إعادة تعيين الفلاتر
+            </button>
           </div>
-          <div className="space-y-2">
-            <h3 className="text-2xl font-bold text-gray-900">
-              لم نجد أي تدوينات مطابقة لبحثك
-            </h3>
-            <p className="text-sm text-gray-500 max-w-md mx-auto leading-relaxed">
-              تأكد من كتابة الكلمات بشكل صحيح أو جرب استخدام كلمات عامة أكثر، أو يمكنك تصفح جميع التصنيفات.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={handleResetFilters}
-            className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-sm font-bold shadow-md hover:shadow-lg transition-all cursor-pointer"
-          >
-            <RotateCcw className="w-4 h-4" />
-            <span>عرض جميع التدوينات</span>
-          </button>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }

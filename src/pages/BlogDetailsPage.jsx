@@ -1,347 +1,382 @@
-import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import {
-  Calendar,
-  Clock,
-  ArrowRight,
-  ArrowLeft,
-  Share2,
-  Copy,
-  Check,
-  Tag,
-  BookOpen,
-  User,
-  Sparkles,
-  Camera,
-  ChevronRight
-} from 'lucide-react';
-import CategoryBadge from '../components/CategoryBadge';
-import PostCard from '../components/PostCard';
+import { useParams, Link, Navigate } from 'react-router-dom';
 import postsData from '../data/posts.json';
 
 export default function BlogDetailsPage() {
-  const { id } = useParams();
-  const navigate = useNavigate();
-  const [copied, setCopied] = useState(false);
-
+  const { slug } = useParams();
   const { posts } = postsData;
 
-  // Match post by id (number or string) or slug
-  const post = posts.find(
-    (p) => String(p.id) === String(id) || p.slug === id
-  );
+  const post = posts.find((p) => p.slug === slug);
 
-  // If post not found
   if (!post) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-24 text-center space-y-6">
-        <div className="w-20 h-20 rounded-full bg-red-50 text-red-500 flex items-center justify-center mx-auto">
-          <Camera className="w-10 h-10" />
-        </div>
-        <h1 className="text-3xl font-black text-gray-900">
-          عذراً، المقال المطلوب غير موجود!
-        </h1>
-        <p className="text-gray-600 text-sm max-w-md mx-auto">
-          ربما تم حذف هذا المقال أو أن الرابط الذي اتبعته غير صحيح.
-        </p>
-        <Link
-          to="/blog"
-          className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-white font-bold text-sm shadow-md transition-all"
-        >
-          <BookOpen className="w-4 h-4" />
-          <span>العودة لصفحة المدونة</span>
-        </Link>
-      </div>
-    );
+    return <Navigate to="/404" replace />;
   }
 
-  // Related posts (from same category, excluding current post)
-  const relatedPosts = posts
+  const formattedDate = new Date(post.date).toLocaleDateString('ar-EG', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
+  let relatedPosts = posts
     .filter((p) => p.category === post.category && p.id !== post.id)
     .slice(0, 3);
+  if (relatedPosts.length < 3) {
+    const extra = posts
+      .filter((p) => p.id !== post.id && !relatedPosts.find((r) => r.id === p.id))
+      .slice(0, 3 - relatedPosts.length);
+    relatedPosts.push(...extra);
+  }
 
-  // Next and Previous posts
-  const currentIndex = posts.findIndex((p) => p.id === post.id);
-  const prevPost = currentIndex > 0 ? posts[currentIndex - 1] : null;
-  const nextPost = currentIndex < posts.length - 1 ? posts[currentIndex + 1] : null;
-
-  // Copy link handler
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2500);
-  };
-
-  // Render markdown content sections
-  const renderFormattedContent = (content) => {
-    if (!content) return null;
-    const parts = content.split('\n\n');
-
-    return parts.map((part, index) => {
-      // Check for h2 heading (##)
-      if (part.startsWith('## ')) {
-        const headingText = part.replace(/^##\s+/, '');
-        return (
-          <div key={index} className="pt-6 pb-2">
-            <h2 className="text-2xl sm:text-3xl font-black text-gray-900 flex items-center gap-3">
-              <span className="w-2 h-7 bg-amber-500 rounded-full inline-block" />
-              <span>{headingText}</span>
-            </h2>
-          </div>
-        );
-      }
-
-      // Check for bullet list
-      if (part.includes('\n- ') || part.startsWith('- ')) {
-        const items = part.split('\n').filter((l) => l.startsWith('- '));
-        return (
-          <ul key={index} className="space-y-2.5 my-4 pr-6 list-disc list-inside text-gray-700 leading-relaxed">
-            {items.map((item, itemIdx) => (
-              <li key={itemIdx} className="text-base sm:text-lg">
-                {item.replace(/^- /, '')}
-              </li>
-            ))}
-          </ul>
-        );
-      }
-
-      // Standard paragraph
-      return (
-        <p
-          key={index}
-          className="text-gray-700 text-base sm:text-lg leading-[1.8] sm:leading-[1.9] font-normal"
-        >
-          {part}
-        </p>
-      );
-    });
-  };
+  const contentBlocks = post.content.split('\n\n');
+  const headings = contentBlocks
+    .filter((block) => block.startsWith('## '))
+    .map((block, idx) => ({
+      id: `section-${idx}`,
+      title: block.replace('## ', '')
+    }));
 
   return (
-    <article className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10 space-y-12">
-      {/* 1. Breadcrumbs */}
-      <nav aria-label="مسار التصفح" className="flex items-center gap-2 text-xs font-medium text-gray-500">
-        <Link to="/" className="hover:text-amber-600 transition-colors">
-          الرئيسية
-        </Link>
-        <ChevronRight className="w-3.5 h-3.5 rotate-180 text-gray-400" />
-        <Link to="/blog" className="hover:text-amber-600 transition-colors">
-          المدونة
-        </Link>
-        <ChevronRight className="w-3.5 h-3.5 rotate-180 text-gray-400" />
-        <span className="text-gray-900 font-bold truncate max-w-xs sm:max-w-sm">
-          {post.title}
-        </span>
-      </nav>
-
-      {/* 2. Article Header */}
-      <header className="space-y-6">
-        {/* Category & Meta */}
-        <div className="flex flex-wrap items-center gap-3">
-          <CategoryBadge category={post.category} size="lg" />
-          <span className="text-gray-300">•</span>
-          <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-500">
-            <Calendar className="w-4 h-4 text-amber-500" />
-            {post.date}
-          </span>
-          <span className="text-gray-300">•</span>
-          <span className="flex items-center gap-1.5 text-xs sm:text-sm font-medium text-gray-500">
-            <Clock className="w-4 h-4 text-amber-500" />
-            {post.readTime}
-          </span>
-        </div>
-
-        {/* Title */}
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-gray-900 leading-[1.25] tracking-tight">
-          {post.title}
-        </h1>
-
-        {/* Excerpt */}
-        <p className="text-lg sm:text-xl text-gray-600 leading-relaxed font-normal">
-          {post.excerpt}
-        </p>
-
-        {/* Author card & Share Actions */}
-        <div className="pt-6 border-t border-b border-gray-100 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          {/* Author */}
-          <div className="flex items-center gap-3.5">
-            <img
-              src={post.author.avatar}
-              alt={post.author.name}
-              className="w-12 h-12 rounded-full object-cover border-2 border-amber-300 shadow-xs"
-              onError={(e) => {
-                e.target.src = 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100&h=100&fit=crop';
-              }}
-            />
-            <div>
-              <p className="text-base font-bold text-gray-900">
-                {post.author.name}
-              </p>
-              <p className="text-xs text-gray-500 font-medium">
-                {post.author.role}
-              </p>
-            </div>
-          </div>
-
-          {/* Social Share Buttons */}
-          <div className="flex items-center gap-2">
-            <span className="text-xs font-bold text-gray-400 ml-1">مشاركة:</span>
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="p-2.5 rounded-xl border border-gray-200 hover:border-amber-400 bg-white text-gray-700 hover:text-amber-600 transition-colors flex items-center gap-1 text-xs font-bold cursor-pointer"
-              title="نسخ الرابط"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 text-emerald-600" />
-                  <span className="text-emerald-600">تم النسخ!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  <span>نسخ</span>
-                </>
-              )}
-            </button>
-
-            <a
-              href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(window.location.href)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2.5 rounded-xl border border-gray-200 hover:border-blue-400 bg-white text-gray-700 hover:text-blue-500 transition-colors text-xs font-bold"
-              title="مشاركة على X"
-            >
-              X / تويتر
-            </a>
-            <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="p-2.5 rounded-xl border border-gray-200 hover:border-blue-600 bg-white text-gray-700 hover:text-blue-600 transition-colors text-xs font-bold"
-              title="مشاركة على فيسبوك"
-            >
-              فيسبوك
-            </a>
-          </div>
-        </div>
-      </header>
-
-      {/* 3. Main Featured Image */}
-      <div className="rounded-3xl overflow-hidden shadow-xl border border-gray-200 bg-gray-100 max-h-[500px]">
+    <article className="bg-[#0a0a0a] min-h-screen">
+      {/* Hero Header */}
+      <div className="relative h-[60vh] min-h-[500px] overflow-hidden">
         <img
           src={post.image}
           alt={post.title}
-          className="w-full h-full object-cover"
-          onError={(e) => {
-            e.target.src = 'https://images.unsplash.com/photo-1516035069371-29a1b244cc32?w=800&h=400&fit=crop';
-          }}
+          className="absolute inset-0 w-full h-full object-cover"
         />
-      </div>
+        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0a] via-[#0a0a0a]/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0a0a]/30 to-transparent" />
 
-      {/* 4. Article Full Content */}
-      <div className="prose prose-lg max-w-none space-y-6 pt-4">
-        {renderFormattedContent(post.content)}
-      </div>
-
-      {/* 5. Tags Section */}
-      {post.tags && post.tags.length > 0 && (
-        <div className="pt-8 border-t border-gray-200">
-          <div className="flex items-center gap-2 text-xs font-bold text-gray-500 mb-3">
-            <Tag className="w-4 h-4 text-amber-500" />
-            <span>الوسوم والكلمات الدلالية:</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {post.tags.map((tag) => (
-              <Link
-                key={tag}
-                to={`/blog?search=${encodeURIComponent(tag)}`}
-                className="px-3 py-1.5 rounded-xl bg-gray-100 hover:bg-amber-100 text-gray-700 hover:text-amber-800 text-xs font-bold transition-colors"
-              >
-                #{tag}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 6. Author Bio Box */}
-      <div className="bg-amber-50/70 border border-amber-200/80 rounded-3xl p-6 sm:p-8 flex flex-col sm:flex-row items-center sm:items-start gap-6">
-        <img
-          src={post.author.avatar}
-          alt={post.author.name}
-          className="w-20 h-20 rounded-2xl object-cover border-2 border-amber-400 shadow-md shrink-0"
-        />
-        <div className="text-center sm:text-right space-y-2">
-          <span className="text-xs font-bold text-amber-700">عن الكاتب</span>
-          <h4 className="text-xl font-bold text-gray-900">{post.author.name}</h4>
-          <p className="text-xs text-amber-800 font-semibold">{post.author.role}</p>
-          <p className="text-sm text-gray-600 leading-relaxed">
-            كاتب ومصور شغوف يشارك تجاربه الميدانية ونصائحه الاحترافية لمساعدة مجتمع المصورين في تطوير مهاراتهم وتحقيق رؤيتهم البصرية.
-          </p>
-        </div>
-      </div>
-
-      {/* 7. Next / Previous Article Navigation */}
-      <div className="pt-8 border-t border-gray-200 grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {prevPost ? (
-          <Link
-            to={`/blog/${prevPost.id}`}
-            className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-amber-400 hover:shadow-md transition-all group text-right flex flex-col justify-between"
-          >
-            <span className="text-xs font-bold text-gray-400 flex items-center gap-1 mb-2">
-              <ArrowRight className="w-3.5 h-3.5 text-amber-500 group-hover:translate-x-1 transition-transform" />
-              <span>المقال السابق</span>
-            </span>
-            <p className="text-sm font-bold text-gray-900 group-hover:text-amber-600 transition-colors line-clamp-2">
-              {prevPost.title}
-            </p>
-          </Link>
-        ) : (
-          <div />
-        )}
-
-        {nextPost ? (
-          <Link
-            to={`/blog/${nextPost.id}`}
-            className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-amber-400 hover:shadow-md transition-all group text-left flex flex-col justify-between"
-          >
-            <span className="text-xs font-bold text-gray-400 flex items-center gap-1 justify-end mb-2">
-              <span>المقال التالي</span>
-              <ArrowLeft className="w-3.5 h-3.5 text-amber-500 group-hover:-translate-x-1 transition-transform" />
-            </span>
-            <p className="text-sm font-bold text-gray-900 group-hover:text-amber-600 transition-colors line-clamp-2 text-right">
-              {nextPost.title}
-            </p>
-          </Link>
-        ) : (
-          <div />
-        )}
-      </div>
-
-      {/* 8. Related Articles */}
-      {relatedPosts.length > 0 && (
-        <section className="pt-12 border-t border-gray-200 space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="text-2xl font-black text-gray-900">
-              مقالات ذات صلة في تصنيف "{post.category}"
-            </h3>
-            <Link
-              to={`/blog?category=${encodeURIComponent(post.category)}`}
-              className="text-xs font-bold text-amber-600 hover:text-amber-700 flex items-center gap-1"
-            >
-              <span>المزيد في {post.category}</span>
-              <ArrowLeft className="w-3.5 h-3.5" />
+        {/* Breadcrumb */}
+        <div className="absolute top-8 right-8 left-8">
+          <nav className="inline-flex items-center gap-2 px-4 py-2 bg-black/30 backdrop-blur-md rounded-full text-sm border border-white/10">
+            <Link to="/" className="text-white/70 hover:text-white transition-colors">
+              <i className="fa-solid fa-home" />
             </Link>
+            <i className="fa-solid fa-chevron-left text-white/30 text-xs" />
+            <Link to="/blog" className="text-white/70 hover:text-white transition-colors">
+              المدونة
+            </Link>
+            <i className="fa-solid fa-chevron-left text-white/30 text-xs" />
+            <span className="text-orange-400 font-medium truncate max-w-[200px]">
+              {post.category}
+            </span>
+          </nav>
+        </div>
+
+        {/* Post Meta & Title */}
+        <div className="absolute bottom-0 left-0 right-0 p-8 md:p-12">
+          <div className="max-w-5xl mx-auto">
+            <div className="flex flex-wrap items-center gap-3 mb-6">
+              <Link
+                to={`/blog?category=${post.category.toLowerCase()}`}
+                className="px-4 py-2 bg-orange-500 text-white text-sm font-bold rounded-full hover:bg-orange-600 transition-colors"
+              >
+                {post.category}
+              </Link>
+              <div className="flex items-center gap-4 text-white/70 text-sm">
+                <span className="flex items-center gap-2">
+                  <i className="fa-regular fa-calendar" />
+                  {formattedDate}
+                </span>
+                <span className="flex items-center gap-2">
+                  <i className="fa-regular fa-clock" />
+                  {post.readTime}
+                </span>
+              </div>
+            </div>
+            <h1 className="text-3xl md:text-5xl lg:text-6xl font-bold text-white mb-6 leading-tight max-w-4xl">
+              {post.title}
+            </h1>
+            <div className="flex items-center gap-4 p-4 bg-white/5 backdrop-blur-md rounded-2xl border border-white/10 w-fit">
+              <img
+                src={post.author.avatar}
+                alt={post.author.name}
+                className="w-14 h-14 rounded-full object-cover ring-2 ring-orange-500/50"
+              />
+              <div>
+                <p className="font-bold text-white">{post.author.name}</p>
+                <p className="text-sm text-white/60">{post.author.role}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content Layout */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="grid lg:grid-cols-[1fr_300px] gap-12">
+          {/* Article Main */}
+          <div className="order-2 lg:order-1">
+            <div className="p-6 bg-gradient-to-r from-orange-500/10 to-yellow-500/5 rounded-2xl border border-orange-500/20 mb-10">
+              <p className="text-lg text-neutral-200 leading-relaxed italic">
+                "{post.excerpt}"
+              </p>
+            </div>
+
+            <div className="prose-custom">
+              {contentBlocks.map((block, idx) => {
+                if (block.startsWith('## ')) {
+                  const headingTitle = block.replace('## ', '');
+                  const headingIndex = headings.findIndex((h) => h.title === headingTitle);
+                  const headingId = `section-${headingIndex >= 0 ? headingIndex : idx}`;
+                  return (
+                    <h2
+                      key={idx}
+                      id={headingId}
+                      className="text-2xl md:text-3xl font-bold text-white mt-14 mb-6 flex items-center gap-4 scroll-mt-24"
+                    >
+                      <span className="flex items-center justify-center w-10 h-10 bg-orange-500/10 rounded-xl border border-orange-500/30">
+                        <i className="fa-solid fa-camera text-orange-500" />
+                      </span>
+                      {headingTitle}
+                    </h2>
+                  );
+                }
+                return (
+                  <p key={idx} className="text-neutral-300 leading-relaxed mb-6 text-lg">
+                    {block}
+                  </p>
+                );
+              })}
+            </div>
+
+            {/* Tags */}
+            <div className="mt-14 p-6 bg-[#111111] rounded-2xl border border-[#262626]">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange-500/30">
+                  <i className="fa-solid fa-tags text-orange-500" />
+                </div>
+                <h3 className="font-bold text-white">الوسوم</h3>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {post.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-4 py-2 bg-[#1a1a1a] text-neutral-400 text-sm rounded-full border border-[#262626] hover:border-orange-500/50 hover:text-orange-500 transition-colors cursor-pointer"
+                  >
+                    #{tag}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Share buttons */}
+            <div className="mt-6 p-6 bg-[#111111] rounded-2xl border border-[#262626]">
+              <div className="flex items-center justify-between flex-wrap gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange-500/30">
+                    <i className="fa-solid fa-share-nodes text-orange-500" />
+                  </div>
+                  <h3 className="font-bold text-white">شارك المقال</h3>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      window.open(
+                        `https://twitter.com/intent/tweet?text=${encodeURIComponent(post.title)}&url=${encodeURIComponent(window.location.href)}`,
+                        '_blank'
+                      );
+                    }}
+                    className="w-11 h-11 bg-[#1a1a1a] border border-[#262626] rounded-xl flex items-center justify-center text-neutral-400 hover:bg-[#1da1f2] hover:text-white hover:border-transparent transition-all duration-300"
+                    aria-label="Share on X"
+                  >
+                    <i className="fa-brands fa-x-twitter" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      window.open(
+                        `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(window.location.href)}`,
+                        '_blank'
+                      );
+                    }}
+                    className="w-11 h-11 bg-[#1a1a1a] border border-[#262626] rounded-xl flex items-center justify-center text-neutral-400 hover:bg-[#0077b5] hover:text-white hover:border-transparent transition-all duration-300"
+                    aria-label="Share on LinkedIn"
+                  >
+                    <i className="fa-brands fa-linkedin-in" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      window.open(
+                        `https://api.whatsapp.com/send?text=${encodeURIComponent(post.title + ' ' + window.location.href)}`,
+                        '_blank'
+                      );
+                    }}
+                    className="w-11 h-11 bg-[#1a1a1a] border border-[#262626] rounded-xl flex items-center justify-center text-neutral-400 hover:bg-[#25d366] hover:text-white hover:border-transparent transition-all duration-300"
+                    aria-label="Share on WhatsApp"
+                  >
+                    <i className="fa-brands fa-whatsapp" />
+                  </button>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard?.writeText(window.location.href);
+                    }}
+                    className="w-11 h-11 bg-[#1a1a1a] border border-[#262626] rounded-xl flex items-center justify-center text-neutral-400 hover:bg-orange-500 hover:text-white hover:border-transparent transition-all duration-300"
+                    aria-label="Copy link"
+                  >
+                    <i className="fa-solid fa-link" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Author Bio */}
+            <div className="mt-6 p-8 bg-gradient-to-br from-[#161616] to-[#111111] rounded-2xl border border-[#262626]">
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
+                <img
+                  src={post.author.avatar}
+                  alt={post.author.name}
+                  className="w-24 h-24 rounded-2xl object-cover ring-4 ring-orange-500/20"
+                />
+                <div className="text-center sm:text-right flex-1">
+                  <span className="text-xs text-orange-500 font-semibold uppercase tracking-wider">
+                    كاتب المقال
+                  </span>
+                  <h3 className="text-xl font-bold text-white mt-1">
+                    {post.author.name}
+                  </h3>
+                  <p className="text-neutral-500 text-sm mb-3">
+                    {post.author.role}
+                  </p>
+                  <p className="text-neutral-400 text-sm leading-relaxed">
+                    مصور محترف شغوف بمشاركة المعرفة والخبرات في عالم التصوير الفوتوغرافي.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {relatedPosts.map((related) => (
-              <PostCard key={related.id} post={related} viewMode="grid" />
-            ))}
+          {/* Sidebar */}
+          <aside className="order-1 lg:order-2">
+            <div className="lg:sticky lg:top-24 space-y-6">
+              {headings.length > 0 && (
+                <div className="p-6 bg-[#111111] rounded-2xl border border-[#262626]">
+                  <div className="flex items-center gap-3 mb-5">
+                    <div className="w-10 h-10 bg-orange-500/10 rounded-xl flex items-center justify-center border border-orange-500/30">
+                      <i className="fa-solid fa-list text-orange-500" />
+                    </div>
+                    <h3 className="font-bold text-white">محتويات المقال</h3>
+                  </div>
+                  <nav className="space-y-2">
+                    {headings.map((h, idx) => (
+                      <a
+                        key={h.id}
+                        href={`#${h.id}`}
+                        className="flex items-center gap-3 p-3 rounded-xl text-neutral-400 hover:text-orange-500 hover:bg-orange-500/5 transition-all duration-300 group"
+                      >
+                        <span className="flex items-center justify-center w-6 h-6 bg-[#1a1a1a] rounded-lg text-xs font-bold text-neutral-500 group-hover:bg-orange-500/10 group-hover:text-orange-500 transition-colors">
+                          {idx + 1}
+                        </span>
+                        <span className="text-sm">{h.title}</span>
+                      </a>
+                    ))}
+                  </nav>
+                </div>
+              )}
+
+              {/* Quick Info */}
+              <div className="p-6 bg-[#111111] rounded-2xl border border-[#262626]">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="text-center p-4 bg-[#0a0a0a] rounded-xl">
+                    <i className="fa-regular fa-clock text-orange-500 text-xl mb-2" />
+                    <p className="text-white font-bold">{post.readTime}</p>
+                    <p className="text-neutral-500 text-xs">وقت القراءة</p>
+                  </div>
+                  <div className="text-center p-4 bg-[#0a0a0a] rounded-xl">
+                    <i className="fa-regular fa-calendar text-orange-500 text-xl mb-2" />
+                    <p className="text-white font-bold text-sm">
+                      {formattedDate.split(' ').slice(0, 2).join(' ')}
+                    </p>
+                    <p className="text-neutral-500 text-xs">تاريخ النشر</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Newsletter CTA */}
+              <div className="p-6 bg-gradient-to-br from-orange-500/10 to-yellow-500/5 rounded-2xl border border-orange-500/20">
+                <div className="text-center">
+                  <div className="w-14 h-14 bg-orange-500/20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <i className="fa-solid fa-envelope text-orange-500 text-xl" />
+                  </div>
+                  <h3 className="font-bold text-white mb-2">لا تفوّت جديدنا</h3>
+                  <p className="text-neutral-400 text-sm mb-4">
+                    اشترك للحصول على أحدث المقالات
+                  </p>
+                  <Link
+                    to="/blog"
+                    className="block w-full py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors text-center"
+                  >
+                    تصفح المزيد
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+
+        {/* Related Posts */}
+        {relatedPosts.length > 0 && (
+          <div className="mt-20 pt-12 border-t border-[#262626]">
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-4">
+                <span className="w-12 h-12 bg-orange-500/10 rounded-2xl flex items-center justify-center border border-orange-500/30">
+                  <i className="fa-solid fa-images text-orange-500 text-xl" />
+                </span>
+                <div>
+                  <h2 className="text-2xl font-bold text-white">مقالات قد تعجبك</h2>
+                  <p className="text-neutral-500 text-sm">
+                    استكشف المزيد من المحتوى المميز
+                  </p>
+                </div>
+              </div>
+              <Link
+                to="/blog"
+                className="hidden sm:flex items-center gap-2 text-orange-500 hover:text-orange-400 transition-colors group"
+              >
+                عرض الكل
+                <i className="fa-solid fa-arrow-left group-hover:-translate-x-1 transition-transform" />
+              </Link>
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {relatedPosts.map((relPost) => (
+                <Link
+                  key={relPost.id}
+                  to={`/blog/${relPost.slug}`}
+                  className="group relative bg-[#111111] rounded-2xl overflow-hidden border border-[#262626] hover:border-orange-500/30 transition-all duration-500"
+                >
+                  <div className="relative h-48 overflow-hidden">
+                    <img
+                      src={relPost.image}
+                      alt={relPost.title}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#111111] to-transparent" />
+                    <span className="absolute top-4 right-4 px-3 py-1 bg-orange-500 text-white text-xs font-bold rounded-full">
+                      {relPost.category}
+                    </span>
+                  </div>
+                  <div className="p-5">
+                    <h3 className="font-bold text-white group-hover:text-orange-500 transition-colors line-clamp-2 mb-3">
+                      {relPost.title}
+                    </h3>
+                    <div className="flex items-center justify-between text-sm text-neutral-500">
+                      <span className="flex items-center gap-2">
+                        <img
+                          src={relPost.author.avatar}
+                          alt={relPost.author.name}
+                          className="w-6 h-6 rounded-full"
+                        />
+                        {relPost.author.name}
+                      </span>
+                      <span>{relPost.readTime}</span>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
           </div>
-        </section>
-      )}
+        )}
+      </div>
     </article>
   );
 }

@@ -1,35 +1,48 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Outlet, useLocation } from 'react-router-dom';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
-import ScrollToTop from './components/ScrollToTop';
 
 import HomePage from './pages/HomePage';
 import BlogPage from './pages/BlogPage';
 import BlogDetailsPage from './pages/BlogDetailsPage';
 import AboutPage from './pages/AboutPage';
-import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
+import TermsPage from './pages/TermsPage';
 import NotFoundPage from './pages/NotFoundPage';
+
+function Layout() {
+  const location = useLocation();
+
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  return (
+    <div className="min-h-screen flex flex-col bg-slate-50">
+      <Navbar />
+      <main className="flex-grow pt-20">
+        <Outlet />
+      </main>
+      <Footer />
+    </div>
+  );
+}
 
 export default function App() {
   return (
     <BrowserRouter>
-      <ScrollToTop />
-      <div className="min-h-screen flex flex-col bg-[#fafaf9] text-gray-900 font-sans selection:bg-amber-500 selection:text-white">
-        <Navbar />
-        <main className="flex-1">
-          <Routes>
-            <Route path="/" element={<HomePage />} />
-            <Route path="/blog" element={<BlogPage />} />
-            <Route path="/blog/:id" element={<BlogDetailsPage />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/terms" element={<TermsPage />} />
-            <Route path="/privacy" element={<PrivacyPage />} />
-            <Route path="*" element={<NotFoundPage />} />
-          </Routes>
-        </main>
-        <Footer />
-      </div>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<HomePage />} />
+          <Route path="blog" element={<BlogPage />} />
+          <Route path="blog/:slug" element={<BlogDetailsPage />} />
+          <Route path="about" element={<AboutPage />} />
+          <Route path="privacy" element={<PrivacyPage />} />
+          <Route path="terms" element={<TermsPage />} />
+          <Route path="*" element={<NotFoundPage />} />
+        </Route>
+      </Routes>
     </BrowserRouter>
   );
 }

@@ -1,175 +1,201 @@
 import { Link } from 'react-router-dom';
-import { Aperture, Mail, ArrowUpRight, Heart, Sparkles } from 'lucide-react';
 import postsData from '../data/posts.json';
+
+const currentYear = new Date().getFullYear();
 
 export default function Footer() {
   const { siteInfo, categories } = postsData;
 
-  return (
-    <footer className="bg-gray-900 text-gray-300 border-t border-gray-800 mt-24">
-      {/* Upper Footer with Newsletter Banner */}
-      <div className="border-b border-gray-800">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 rounded-3xl p-8 sm:p-12 shadow-2xl flex flex-col lg:flex-row items-center justify-between gap-8 text-white relative overflow-hidden">
-            <div className="absolute -right-12 -top-12 w-64 h-64 bg-white/10 rounded-full blur-2xl pointer-events-none" />
-            <div className="relative z-10 text-center lg:text-right max-w-xl">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 text-xs font-bold mb-3 backdrop-blur-xs">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>انضم إلى أكثر من 10,000 مصور</span>
-              </span>
-              <h3 className="text-2xl sm:text-3xl font-black mb-3">
-                اشترك في نشرة عدسة الأسبوعية
-              </h3>
-              <p className="text-white/80 text-sm sm:text-base">
-                نصائح حصرية، كواليس جلسات تصوير، ومراجعات لأحدث الكاميرات والعدسات مباشرة إلى بريدك الإلكتروني.
-              </p>
-            </div>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                alert('شكراً لاشتراكك في نشرة عدسة الإخبارية!');
-              }}
-              className="relative z-10 w-full sm:w-auto flex flex-col sm:flex-row gap-3"
-            >
-              <input
-                type="email"
-                required
-                placeholder="أدخل بريدك الإلكتروني..."
-                className="px-5 py-3.5 rounded-2xl bg-white/95 text-gray-900 placeholder-gray-500 text-sm focus:outline-hidden focus:ring-2 focus:ring-white w-full sm:w-80 shadow-md"
-              />
-              <button
-                type="submit"
-                className="px-6 py-3.5 bg-gray-950 hover:bg-black text-white font-bold rounded-2xl text-sm transition-all shadow-lg hover:shadow-xl hover:-translate-y-0.5 whitespace-nowrap cursor-pointer"
-              >
-                اشتراك مجاني
-              </button>
-            </form>
-          </div>
-        </div>
-      </div>
+  const navLinks = {
+    explore: [
+      { name: 'الرئيسية', path: '/' },
+      { name: 'المدونة', path: '/blog' },
+      { name: 'من نحن', path: '/about' }
+    ],
+    categories: categories.slice(0, 4).map((cat) => ({
+      name: cat.name,
+      path: `/blog?category=${cat.name.toLowerCase()}`
+    })),
+    legal: [
+      { name: 'سياسة الخصوصية', path: '/privacy' },
+      { name: 'شروط الخدمة', path: '/terms' }
+    ]
+  };
 
-      {/* Main Footer Links */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-12">
-          {/* Brand Col */}
-          <div className="lg:col-span-2 space-y-5">
-            <Link to="/" className="inline-flex items-center gap-3 group">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-amber-500/20 group-hover:scale-105 transition-transform">
-                <Aperture className="w-7 h-7" />
+  const socialLinks = [
+    {
+      name: 'twitter',
+      url: siteInfo.social.twitter,
+      icon: (
+        <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+      )
+    },
+    {
+      name: 'github',
+      url: siteInfo.social.github,
+      icon: (
+        <path
+          fillRule="evenodd"
+          d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z"
+          clipRule="evenodd"
+        />
+      )
+    },
+    {
+      name: 'linkedin',
+      url: siteInfo.social.linkedin,
+      icon: (
+        <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
+      )
+    },
+    {
+      name: 'youtube',
+      url: siteInfo.social.youtube,
+      icon: (
+        <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
+      )
+    }
+  ];
+
+  return (
+    <footer className="relative bg-[#0a0a0a] text-neutral-300 overflow-hidden border-t border-[#262626]">
+      <div className="absolute top-0 left-1/4 w-96 h-96 bg-orange-500/5 rounded-full blur-3xl" />
+      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-500/5 rounded-full blur-3xl" />
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+          {/* Column 1: Info & Socials */}
+          <div className="lg:col-span-1">
+            <Link to="/" className="flex items-center gap-3 mb-6 group">
+              <div
+                className="w-11 h-11 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center group-hover:scale-105 transition-all duration-300"
+                style={{ boxShadow: '0 4px 20px rgba(249, 115, 22, 0.3)' }}
+              >
+                <span className="text-white font-bold text-xl">ع</span>
               </div>
-              <div className="flex flex-col">
-                <span className="text-2xl font-black text-white">{siteInfo.name}</span>
-                <span className="text-xs text-amber-400 font-medium">{siteInfo.tagline}</span>
-              </div>
+              <span className="text-xl font-bold text-white">{siteInfo.name}</span>
             </Link>
-            <p className="text-sm text-gray-400 leading-relaxed max-w-sm">
+            <p className="text-sm text-neutral-500 mb-6 leading-relaxed">
               {siteInfo.description}
             </p>
-            <div className="flex items-center gap-2 pt-2 text-sm text-gray-400">
-              <Mail className="w-4 h-4 text-amber-500" />
-              <a
-                href={`mailto:${siteInfo.email}`}
-                className="hover:text-amber-400 transition-colors font-mono"
-              >
-                {siteInfo.email}
-              </a>
+            <div className="flex gap-2">
+              {socialLinks.map((item) => (
+                <a
+                  key={item.name}
+                  href={item.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-10 h-10 bg-[#161616] border border-[#262626] hover:bg-gradient-to-br hover:from-orange-500 hover:to-orange-600 hover:border-transparent rounded-xl flex items-center justify-center text-neutral-500 hover:text-white transition-all duration-300 hover:scale-110"
+                  aria-label={item.name}
+                >
+                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                    {item.icon}
+                  </svg>
+                </a>
+              ))}
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Column 2: Explore */}
           <div>
-            <h4 className="text-white font-bold text-base mb-4 relative inline-block">
-              روابط رئيسية
-              <span className="block h-0.5 w-8 bg-amber-500 rounded-full mt-1"></span>
-            </h4>
-            <ul className="space-y-3 text-sm">
-              <li>
-                <Link to="/" className="hover:text-amber-400 transition-colors inline-flex items-center gap-1">
-                  الرئيسية
-                </Link>
-              </li>
-              <li>
-                <Link to="/blog" className="hover:text-amber-400 transition-colors inline-flex items-center gap-1">
-                  جميع المقالات
-                </Link>
-              </li>
-              <li>
-                <Link to="/about" className="hover:text-amber-400 transition-colors inline-flex items-center gap-1">
-                  من نحن
-                </Link>
-              </li>
-              <li>
-                <Link to="/terms" className="hover:text-amber-400 transition-colors inline-flex items-center gap-1">
-                  شروط الاستخدام
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy" className="hover:text-amber-400 transition-colors inline-flex items-center gap-1">
-                  سياسة الخصوصية
-                </Link>
-              </li>
-            </ul>
-          </div>
-
-          {/* Categories */}
-          <div>
-            <h4 className="text-white font-bold text-base mb-4 relative inline-block">
-              التصنيفات
-              <span className="block h-0.5 w-8 bg-amber-500 rounded-full mt-1"></span>
-            </h4>
-            <ul className="space-y-3 text-sm">
-              {categories.map((cat) => (
-                <li key={cat.name}>
+            <h3 className="text-white font-semibold mb-6 flex items-center gap-2">
+              <span className="w-8 h-0.5 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full" />
+              استكشف
+            </h3>
+            <ul className="space-y-4">
+              {navLinks.explore.map((item) => (
+                <li key={item.path}>
                   <Link
-                    to={`/blog?category=${encodeURIComponent(cat.name)}`}
-                    className="hover:text-amber-400 transition-colors inline-flex items-center justify-between w-full group"
+                    to={item.path}
+                    className="text-sm text-neutral-500 hover:text-orange-500 transition-colors duration-300 flex items-center gap-2 group"
                   >
-                    <span>{cat.name}</span>
-                    <span className="text-xs px-2 py-0.5 rounded-full bg-gray-800 text-gray-400 group-hover:bg-amber-500/20 group-hover:text-amber-300 transition-colors">
-                      {cat.count}
-                    </span>
+                    <svg
+                      className="w-4 h-4 opacity-0 -mr-4 group-hover:opacity-100 group-hover:mr-0 transition-all duration-300 text-orange-500 rotate-180"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    {item.name}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Social Links */}
+          {/* Column 3: Categories */}
           <div>
-            <h4 className="text-white font-bold text-base mb-4 relative inline-block">
-              تابعنا
-              <span className="block h-0.5 w-8 bg-amber-500 rounded-full mt-1"></span>
-            </h4>
-            <p className="text-xs text-gray-400 mb-4">
-              كن جزءاً من مجتمعنا على شبكات التواصل الاجتماعي.
-            </p>
-            <ul className="space-y-2 text-sm">
-              {Object.entries(siteInfo.social).map(([platform, url]) => (
-                <li key={platform}>
-                  <a
-                    href={url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center justify-between text-gray-400 hover:text-amber-400 transition-colors py-1 group"
+            <h3 className="text-white font-semibold mb-6 flex items-center gap-2">
+              <span className="w-8 h-0.5 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full" />
+              التصنيفات
+            </h3>
+            <ul className="space-y-4">
+              {navLinks.categories.map((item) => (
+                <li key={item.name}>
+                  <Link
+                    to={item.path}
+                    className="text-sm text-neutral-500 hover:text-orange-500 transition-colors duration-300 flex items-center gap-2 group"
                   >
-                    <span className="capitalize">{platform}</span>
-                    <ArrowUpRight className="w-4 h-4 opacity-50 group-hover:opacity-100 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all" />
-                  </a>
+                    <svg
+                      className="w-4 h-4 opacity-0 -mr-4 group-hover:opacity-100 group-hover:mr-0 transition-all duration-300 text-orange-500 rotate-180"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                    {item.name}
+                  </Link>
                 </li>
               ))}
             </ul>
           </div>
-        </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-16 pt-8 border-t border-gray-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
-          <p>
-            جميع الحقوق محفوظة © {new Date().getFullYear()} {siteInfo.name} - عالم التصوير الفوتوغرافي
-          </p>
-          <p className="flex items-center gap-1.5">
-            <span>صُنع بشغف للمصورين والمبدعين العرب</span>
-            <Heart className="w-3.5 h-3.5 text-red-500 fill-current inline" />
-          </p>
+          {/* Column 4: Newsletter */}
+          <div>
+            <h3 className="text-white font-semibold mb-6 flex items-center gap-2">
+              <span className="w-8 h-0.5 bg-gradient-to-r from-orange-500 to-yellow-500 rounded-full" />
+              ابقى على اطلاع
+            </h3>
+            <p className="text-sm text-neutral-500 mb-4">
+              اشترك للحصول على أحدث المقالات والتحديثات.
+            </p>
+            <form onSubmit={(e) => e.preventDefault()} className="space-y-3">
+              <div className="relative">
+                <input
+                  type="email"
+                  placeholder="أدخل بريدك الإلكتروني"
+                  className="w-full px-4 py-3 bg-[#161616] border border-[#262626] rounded-xl text-sm text-white focus:outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 transition-all duration-300 placeholder-neutral-600"
+                />
+              </div>
+              <button type="submit" className="w-full btn-primary text-sm">
+                اشترك
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+
+      {/* Bottom Legal Bar */}
+      <div className="relative border-t border-[#262626]">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="flex flex-col md:flex-row justify-between items-center gap-4">
+            <p className="text-sm text-neutral-600">
+              © {currentYear} {siteInfo.name}. صنع بكل{' '}
+              <i className="fa-solid fa-heart text-orange-500" /> جميع الحقوق محفوظة.
+            </p>
+            <div className="flex gap-6">
+              {navLinks.legal.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className="text-sm text-neutral-600 hover:text-orange-500 transition-colors duration-300"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          </div>
         </div>
       </div>
     </footer>
